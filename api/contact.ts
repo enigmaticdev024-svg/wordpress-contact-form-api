@@ -188,7 +188,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
-      to: "davis1larry@gmail.com",
+      to: "withm9841@gmail.com",
       subject: `New Contact Form: ${name}`,
       html: buildContactEmailHtml(parsed.data),
       replyTo: email,
