@@ -28,6 +28,110 @@ function displayField(value: string | undefined): string {
   return escapeHtml(trimmed ? trimmed : "N/A");
 }
 
+type ContactData = z.infer<typeof ContactSchema>;
+
+function buildContactEmailHtml(data: ContactData): string {
+  const { name, email, address, city, state, zip, phone, message } = data;
+  const submittedAt = new Date().toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+  });
+
+  const row = (label: string, value: string) => `
+    <tr>
+      <td style="padding:12px 16px;border-bottom:1px solid #e8ecf1;color:#64748b;font-size:13px;font-weight:600;width:120px;vertical-align:top;font-family:Arial,Helvetica,sans-serif;">
+        ${label}
+      </td>
+      <td style="padding:12px 16px;border-bottom:1px solid #e8ecf1;color:#1e293b;font-size:15px;line-height:1.5;vertical-align:top;font-family:Arial,Helvetica,sans-serif;">
+        ${value}
+      </td>
+    </tr>`;
+
+  const emailValue = `<a href="mailto:${escapeHtml(email)}" style="color:#2563eb;text-decoration:none;">${displayField(email)}</a>`;
+  const phoneValue = phone?.trim()
+    ? `<a href="tel:${escapeHtml(phone.trim())}" style="color:#2563eb;text-decoration:none;">${displayField(phone)}</a>`
+    : displayField(phone);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Contact Form Submission</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#1e40af 0%,#2563eb 100%);padding:28px 32px;">
+              <p style="margin:0 0 6px;color:rgba(255,255,255,0.85);font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:600;">
+                EHC Help
+              </p>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;line-height:1.3;">
+                New Contact Submission
+              </h1>
+              <p style="margin:10px 0 0;color:rgba(255,255,255,0.9);font-size:14px;">
+                ${escapeHtml(submittedAt)}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 8px;">
+              <p style="margin:0 0 12px;color:#334155;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                Contact Details
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ecf1;border-radius:8px;overflow:hidden;">
+                ${row("Name", displayField(name))}
+                ${row("Email", emailValue)}
+                ${row("Phone", phoneValue)}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px;">
+              <p style="margin:0 0 12px;color:#334155;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                Address
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ecf1;border-radius:8px;overflow:hidden;">
+                ${row("Street", displayField(address))}
+                ${row("City", displayField(city))}
+                ${row("State", displayField(state))}
+                ${row("Zip", displayField(zip))}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 28px;">
+              <p style="margin:0 0 12px;color:#334155;font-size:13px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                Message
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:8px;padding:18px 20px;color:#1e293b;font-size:15px;line-height:1.7;">
+                    ${escapeHtml(message).replace(/\n/g, "<br>")}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8fafc;padding:18px 32px;border-top:1px solid #e8ecf1;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;line-height:1.6;text-align:center;">
+                This email was sent from your website contact form.<br />
+                Reply directly to this email to respond to <strong style="color:#64748b;">${displayField(name)}</strong>.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 function getResendClient(): Resend {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -85,19 +189,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: "enigmaticdev024@gmail.com",
-      subject: "New Contact Form Submission",
-      html: `
-        <h2>New Contact Submission</h2>
-        <p><strong>Name:</strong> ${displayField(name)}</p>
-        <p><strong>Email:</strong> ${displayField(email)}</p>
-        <p><strong>Phone:</strong> ${displayField(phone)}</p>
-        <p><strong>Address:</strong> ${displayField(address)}</p>
-        <p><strong>City:</strong> ${displayField(city)}</p>
-        <p><strong>State:</strong> ${displayField(state)}</p>
-        <p><strong>Zip:</strong> ${displayField(zip)}</p>
-        <p><strong>Message:</strong></p>
-        <p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>
-      `,
+      subject: `New Contact Form: ${name}`,
+      html: buildContactEmailHtml(parsed.data),
       replyTo: email,
     });
 
