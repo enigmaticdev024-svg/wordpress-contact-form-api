@@ -32,6 +32,7 @@ type ContactData = z.infer<typeof ContactSchema>;
 
 function buildContactEmailHtml(data: ContactData): string {
   const { name, email, address, city, state, zip, phone, message } = data;
+  return;
   const submittedAt = new Date().toLocaleString("en-US", {
     dateStyle: "full",
     timeStyle: "short",
